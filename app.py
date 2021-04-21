@@ -6,8 +6,6 @@ app = Flask(__name__)
 
 matches = []
 
-k = 0
-
 
 @app.route('/')
 def hello_world():
@@ -21,20 +19,13 @@ def hello_world():
 def getPlayers():
     for n in range(len(players)):
         print("jugador:", players[n]["name"], "pokemons:", players[n]["pokemon"])
-    return jsonify({"jugadores": players})
+    return jsonify({"peleando": matches, "esperando": players})
 
 
 @app.route("/players/matches")
 def seematces():
-    fights = []
-    for n in range(len(matches)):
-        x = matchestojson(matches[n][1].get_nick(), matches[n][1].get_pokemon(),
-                          matches[n][2].get_nick(), matches[n][2].get_pokemon())
-        print(x)
-        print(matches[n][1].get_nick(), matches[n][1].get_pokemon())
-        print(matches[n][2].get_nick(), matches[n][2].get_pokemon())
-    print(len(matches))
-    return jsonify({"jugadores": fights})
+    print(matches)
+    return jsonify({"peleas": matches})
 
 
 def getPlayers():
@@ -77,7 +68,7 @@ def addPlayer():
         matches.append(pelea)
         print("matches", matches)
         print("esperando", players)
-        return jsonify({"peleando": matches[0], "esperando": players})
+        return jsonify({"peleando": matches, "esperando": players})
 
     # corregir reenviar info server actualizada
 
@@ -93,5 +84,36 @@ def deleteProduct(player_name):
         return jsonify()
 
 
-if __name__ == '__main__':
-    app.run()
+@app.route("/players/matches/<string:player_name>")
+def enemyData(player_name):
+    me = player_name
+    for n in matches:
+        playerFound = [player for player in n if player["name"] == me]
+        if len(playerFound) > 0:
+            playerFound2 = [player for player in n if player["name"] != me]
+            print("pelea:", playerFound2)
+            return jsonify({"pelea": playerFound2})
+
+
+@app.route("/wait/<string:player_name>")
+def wait(player_name):
+    espera = [{"wait": "true"}]
+    playerFound = [player for player in players if player["name"] == player_name]
+    if len(playerFound) > 0:
+        espera.remove(espera[0])
+        espera.append({"wait": "true"})
+        print(espera)
+        print("espera")
+        return jsonify({"espera": espera})
+    for n in matches:
+        playerFound = [player for player in n if player["name"] == player_name]
+        if len(playerFound) > 0:
+            espera.remove(espera[0])
+            espera.append({"wait": "false"})
+            print(espera)
+            print("continua")
+            return jsonify({"espera": espera})
+            break
+
+    if __name__ == '__main__':
+        app.run()
